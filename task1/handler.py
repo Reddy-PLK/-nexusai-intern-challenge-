@@ -1,15 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 import asyncio
-import openai
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
+# Response structure
 @dataclass
 class MessageResponse:
     response_text: str
@@ -19,68 +13,68 @@ class MessageResponse:
     error: Optional[str]
 
 
-SYSTEM_PROMPT = """
-You are a telecom support AI.
-
-Help users with:
-- network issues
-- billing problems
-- SIM issues
-
-Rules:
-- Be polite and clear
-- Voice responses must be under 2 sentences
-- Chat responses can be longer
-- Suggest escalation if needed
-"""
-
-
+# Main async function
 async def handle_message(customer_message: str, customer_id: str, channel: str) -> MessageResponse:
 
-    # Empty input
+    # Error case 1: empty input
     if not customer_message.strip():
-        return MessageResponse("", 0.0, "none", "", "empty_input")
-
-    try:
-        response = await asyncio.wait_for(
-            openai.ChatCompletion.acreate(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": customer_message}
-                ]
-            ),
-            timeout=10
+        return MessageResponse(
+            response_text="",
+            confidence=0.0,
+            suggested_action="none",
+            channel_formatted_response="",
+            error="empty_input"
         )
 
-        ai_text = response["choices"][0]["message"]["content"]
+    try:
+        # Mock AI logic (no API needed)
+
+        message = customer_message.lower()
+
+        if "internet" in message:
+            response_text = "Please restart your router and check all cables."
+            confidence = 0.9
+            suggested_action = "troubleshoot"
+
+        elif "billing" in message or "payment" in message:
+            response_text = "Please check your billing details in the app or contact support."
+            confidence = 0.85
+            suggested_action = "billing_support"
+
+        elif "sim" in message:
+            response_text = "Try reinserting your SIM card or restart your phone."
+            confidence = 0.8
+            suggested_action = "troubleshoot"
+
+        elif "cancel" in message:
+            response_text = "We’re sorry to hear that. Let me connect you to a human agent."
+            confidence = 0.95
+            suggested_action = "escalate"
+
+        else:
+            response_text = "Thank you for your message. Our support team will assist you shortly."
+            confidence = 0.7
+            suggested_action = "general_response"
 
         # Channel formatting
         if channel == "voice":
-            formatted = ai_text[:150]
+            channel_response = response_text[:100]  # short response
         else:
-            formatted = ai_text
+            channel_response = response_text
 
-        return MessageResponse(ai_text, 0.9, "resolve", formatted, None)
+        return MessageResponse(
+            response_text=response_text,
+            confidence=confidence,
+            suggested_action=suggested_action,
+            channel_formatted_response=channel_response,
+            error=None
+        )
 
-    except asyncio.TimeoutError:
-        return MessageResponse("", 0.0, "retry", "", "timeout")
-
-    except openai.error.RateLimitError:
-        await asyncio.sleep(2)
-
-        try:
-            retry = await openai.ChatCompletion.acreate(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": customer_message}
-                ]
-            )
-
-            ai_text = retry["choices"][0]["message"]["content"]
-
-            return MessageResponse(ai_text, 0.85, "resolve", ai_text, None)
-
-        except:
-            return MessageResponse("", 0.0, "failed", "", "rate_limit_failed")
+    except Exception as e:
+        return MessageResponse(
+            response_text="",
+            confidence=0.0,
+            suggested_action="failed",
+            channel_formatted_response="",
+            error=str(e)
+        )
