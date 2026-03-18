@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from task2.database import save_message
 import asyncio
 
 
@@ -61,6 +62,8 @@ async def handle_message(customer_message: str, customer_id: str, channel: str) 
             channel_response = response_text[:100]  # short response
         else:
             channel_response = response_text
+            
+        save_message(customer_id, customer_message, response_text)
 
         return MessageResponse(
             response_text=response_text,

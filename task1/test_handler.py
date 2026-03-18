@@ -1,5 +1,5 @@
 import asyncio
-from handler import handle_message
+from task1.handler import handle_message
 
 
 async def test():
