@@ -39,5 +39,11 @@ It processes customer messages, generates responses, stores them in a database, 
 - Asyncio
 
 ---
+### Escalation Rule Conflicts
+
+When multiple rules apply, priority is determined by rule order. 
+For example, "service_cancellation" always triggers escalation regardless of confidence or sentiment, because it represents a critical business action. 
+Other rules are evaluated in sequence, meaning earlier rules take precedence over later ones. 
+This ensures predictable and consistent decision-making in high-risk scenarios.
 
 ## Project Structure
